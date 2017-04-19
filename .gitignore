@@ -15,5 +15,9 @@ mazes
 # Backup files
 *.bk
 
+# Cargo-related
+target
+Cargo.lock
+
 # Miscellaneous
 .DS_Store

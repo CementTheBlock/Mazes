@@ -1,2 +1,19 @@
+# Executables
 mazes
+*.exe
+
+# Compiled files
+*.o
+*.so
+*.rlib
+*.dll
+
+# Temporary files
+.*~
 *.swp
+
+# Backup files
+*.bk
+
+# Miscellaneous
+.DS_Store

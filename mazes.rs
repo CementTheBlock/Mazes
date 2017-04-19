@@ -28,8 +28,8 @@ impl Node {
     fn print_node(&self) {
         println!("{4}\n{0}\n{1}\n{2}\n{3}",
                  opening_to_string(self.up), opening_to_string(self.down),
-                  opening_to_string(self.left), opening_to_string(self.right),
-                  node_type_to_string(self.n_type));
+                 opening_to_string(self.left), opening_to_string(self.right),
+                 node_type_to_string(self.n_type));
     }
 }
 
@@ -37,7 +37,7 @@ fn opening_to_string(opening: Option<Cursor>) -> String {
     let ret_string; 
     match opening {
         Option::Some(cursor) => {
-            ret_string = fmt::format(format_args!("Some(({}))", cursor.0));
+            ret_string = fmt::format(format_args!("Some(({}))", cursor.index));
             return ret_string;
         },
         Option::None => {
@@ -55,26 +55,24 @@ fn node_type_to_string<'a>(n_type: NodeType) -> &'a str {
     }
 }
 
-    
-
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct Cursor (usize);
+struct Cursor { index: usize, }
 
 #[derive(Clone)]
-struct Maze (Vec<Node>);
+struct Maze { nodes: Vec<Node> }
 
 impl Maze {
     fn get(&self, cursor: Cursor) -> &Node {
-        let i = cursor.0;
-        &(self.0[i])
+        let i = cursor.index;
+        &(self.nodes[i])
     }
 
     fn add_dir(&mut self, cursor: Cursor, dir: Direction, node_type: NodeType) -> Cursor {
         let node = *self.get(cursor);
         let new_node = new_node(node_type);
-        let ret_cursor = Cursor (self.0.len());
-        self.0.push(update_node_in_dir(new_node, reverse_dir(dir), &cursor));
-        self.0[cursor.0] = update_node_in_dir(node, dir, &ret_cursor);
+        let ret_cursor = Cursor {index: self.nodes.len()};
+        self.nodes.push(update_node_in_dir(new_node, reverse_dir(dir), &cursor));
+        self.nodes[cursor.index] = update_node_in_dir(node, dir, &ret_cursor);
         ret_cursor
     }
 }
@@ -89,7 +87,7 @@ fn reverse_dir(dir: Direction) -> Direction {
 }
 
 fn update_node_in_dir(node: Node, dir: Direction, cursor: & Cursor) -> Node {
-    let new_cursor = Cursor (cursor.0);
+    let new_cursor = Cursor { index: cursor.index };
     match dir {
         Direction::Up => Node {up: Some(new_cursor), .. node},
         Direction::Down => Node {down: Some(new_cursor), .. node},
@@ -107,51 +105,43 @@ fn new_node(n_type: NodeType) -> Node {
 }
 
 fn new() -> Maze {
-    Maze ( vec![Node { up: None, down: None, left: None, right: None, n_type: NodeType::Start }] )
+    Maze { nodes: vec![Node { up: None, down: None, left: None, right: None, n_type: NodeType::Start }] }
 }
 
 fn get_root() -> Cursor {
-    Cursor (0)
+    Cursor {index: 0}
 }
 
 fn make_plane(side_length: usize) -> Maze {
     let mut maze = new();
     let mut cursor;
-    let mut x = 0;
-    let mut y;
-    while x < side_length {
-        y = 0;
+    let y = 0;
+    for x in 0 .. side_length {
         cursor = maze_coords(&maze, x, y);
         maze.add_dir(cursor, Direction::Right, NodeType::Regular);
-        while y < side_length {
+        for y in 0 .. side_length - 1 {
             cursor = maze_coords(&maze, x, y);
             maze.add_dir(cursor, Direction::Down, NodeType::Regular);
-            y += 1;
         }
-        x += 1;
     }
-    x = 0;
     let mut cursor2;
-    while x < (side_length - 1) {
-        y = 1;
-        while y < side_length {
+    for x in 0 .. (side_length - 1) {
+        for y in 1 .. side_length {
             cursor = maze_coords(&maze, x, y);
             cursor2 = maze_coords(&maze, x+1, y);
             maze = update_two_nodes(maze, cursor, cursor2, Direction::Right);
-            y += 1;
         }
-        x += 1;
     }
     cursor = maze_coords(&maze, side_length - 1, side_length - 1);
     let node = *maze.get(cursor);
-    maze.0[cursor.0] = Node {n_type: NodeType::End, .. node};
+    maze.nodes[cursor.index] = Node {n_type: NodeType::End, .. node};
     maze
 }
 
 fn update_two_nodes(maze: Maze, cursor_one: Cursor, cursor_two: Cursor, dir: Direction) -> Maze{
     let mut ret_maze = maze;
-    ret_maze.0[cursor_one.0] = update_node_in_dir(*ret_maze.get(cursor_one), dir, &cursor_two);
-    ret_maze.0[cursor_two.0] = update_node_in_dir(*ret_maze.get(cursor_two), reverse_dir(dir), &cursor_one);
+    ret_maze.nodes[cursor_one.index] = update_node_in_dir(*ret_maze.get(cursor_one), dir, &cursor_two);
+    ret_maze.nodes[cursor_two.index] = update_node_in_dir(*ret_maze.get(cursor_two), reverse_dir(dir), &cursor_one);
     ret_maze
 }
 
@@ -167,21 +157,17 @@ fn maze_next(maze: & Maze, cursor: Cursor, dir: Direction) -> Cursor {
 
 fn maze_coords(maze: & Maze, x: usize, y: usize) -> Cursor {
     let mut cursor = get_root();
-    let mut i: usize = 0;
-    let mut i2: usize = 0;
-    while i < x {
+    for _ in 0 .. x {
         cursor = maze_next(maze, cursor, Direction::Right);
-        i += 1;
     }
-    while i2 < y {
+    for _ in 0 .. y {
         cursor = maze_next(maze, cursor, Direction::Down);
-        i2 += 1;
     }
     cursor
 }
 
 fn main() {
     let maze = make_plane(4);
-    let cursor = maze_coords(&maze, 2, 1);
+    let cursor = maze_coords(&maze, 3, 3);
     maze.get(cursor).print_node();
 }

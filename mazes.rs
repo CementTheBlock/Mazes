@@ -147,9 +147,8 @@ fn get_root() -> Cursor {
 fn make_plane(side_length: usize) -> Maze {
     let mut maze = new();
     let mut cursor;
-    let y = 0;
     for x in 0..side_length {
-        cursor = maze_coords(&maze, x, y);
+        cursor = maze_coords(&maze, x, 0);
         maze.add_dir(cursor, Direction::Right, NodeType::Regular);
         for y in 0..side_length - 1 {
             cursor = maze_coords(&maze, x, y);

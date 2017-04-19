@@ -148,15 +148,16 @@ fn make_plane(side_length: usize) -> Maze {
     let mut maze = new();
     let mut cursor;
     for x in 0..side_length {
-        cursor = maze_coords(&maze, x, 0);
-        maze.add_dir(cursor, Direction::Right, NodeType::Regular);
-        for y in 0..side_length - 1 {
+        for y in 0..side_length {
             cursor = maze_coords(&maze, x, y);
             maze.add_dir(cursor, Direction::Down, NodeType::Regular);
+            if x < side_length - 1 {
+                maze.add_dir(cursor, Direction::Right, NodeType::Regular);
+            }
         }
     }
     let mut cursor2;
-    for x in 0..(side_length - 1) {
+    for x in 0..side_length - 1 {
         for y in 1..side_length {
             cursor = maze_coords(&maze, x, y);
             cursor2 = maze_coords(&maze, x + 1, y);

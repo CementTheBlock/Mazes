@@ -2,9 +2,14 @@ INDENT = sed 's/^/\t/g'
 SGR_BOLD = printf '\e[1m'
 SGR_RESET = printf '\e[0m'
 
-.PHONY: all clean help
+.PHONY: all check build clean help
 
-all: mazes
+all: build check
+
+check: mazes
+	./mazes
+
+build: mazes
 
 mazes: mazes.rs
 	rustfmt mazes.rs
@@ -22,8 +27,10 @@ clean:
 
 help:
 	-@printf "Syntax: make ACTION\n"
-	-@printf "where ACTION is one of the following:\n"
+	-@printf "where ACTION is one of the following (default: \e[1mall\e[0m):\n"
 	-@printf "  \e[1mhelp\e[0m  - show this help message\n"
-	-@printf "  \e[1mall\e[0m   - build everything\n"
+	-@printf "  \e[1mall\e[0m   - same as \e[1mmake build check\e[0m\n"
+	-@printf "  \e[1mcheck\e[0m - run the tests\n"
+	-@printf "  \e[1mbuild\e[0m - build everything\n"
 	-@printf "  \e[1mmazes\e[0m - build the \e[1mmazes\e[0m executable\n"
 	-@printf "  \e[1mclean\e[0m - clean up any untracked files\n"

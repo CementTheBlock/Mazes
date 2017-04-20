@@ -59,7 +59,7 @@ pub mod node {
     fn display_opening<N: fmt::Display>(opening: Option<N>) -> String {
         match opening {
             Option::Some(n) => format!("Some(({}))", n),
-            Option::None => format!("None")
+            Option::None => format!("None"),
         }
     }
 
@@ -114,10 +114,18 @@ pub mod node {
 
         pub fn update_neighbor(&mut self, dir: Direction, new: Option<N>) {
             match dir {
-                Direction::Up => { self.up = new; },
-                Direction::Down => { self.down = new; },
-                Direction::Left => { self.left = new; },
-                Direction::Right => { self.right = new; },
+                Direction::Up => {
+                    self.up = new;
+                }
+                Direction::Down => {
+                    self.down = new;
+                }
+                Direction::Left => {
+                    self.left = new;
+                }
+                Direction::Right => {
+                    self.right = new;
+                }
             }
         }
 
@@ -224,7 +232,7 @@ pub mod maze {
                 }
             }
         }
-        
+
         for x in 0..side_length - 1 {
             for y in 1..side_length {
                 let cursor_a = maze.by_coords(x, y);

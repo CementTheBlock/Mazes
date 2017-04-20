@@ -11,9 +11,9 @@ check: mazes
 
 build: mazes
 
-mazes: mazes.rs
-	rustfmt mazes.rs
-	rustc mazes.rs
+mazes: src/mazes.rs
+	rustfmt src/mazes.rs
+	rustc src/mazes.rs
 
 clean:
 	-@echo "Actions that will be taken while cleaning:"

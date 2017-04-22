@@ -1,6 +1,134 @@
 use maze::*;
 use direction::*;
 // use node::*;
+use std::mem;
+
+type DotColor = String; // FIXME: maybe use an enum
+type DotPosition = (i32, i32);
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct DotNode {
+    label: String,
+    color: Option<DotColor>,
+    position: Option<DotPosition>,
+}
+
+impl DotNode {
+    pub fn make(label: &str) -> DotNode {
+        DotNode {
+            label: String::from(label),
+            color: None,
+            position: None,
+        }
+    }
+
+    pub fn set_color(&mut self, color: DotColor) {
+        self.color = Some(color);
+    }
+
+    pub fn set_position(&mut self, x: i32, y: i32) {
+        self.position = Some((x, y));
+    }
+
+    pub fn render(&self) -> String {
+        let mut result = String::new();
+        result.push_str(&format!("\"{}\"", self.label));
+
+        let mut attrs = Vec::new();
+
+        if let Some(c) = self.color.clone() {
+            attrs.push(format!("color=\"{}\"", c));
+        }
+
+        if let Some((x, y)) = self.position {
+            attrs.push(format!("pos=\"{},{}!\"", x, y));
+        }
+
+        result.push_str(&format!(" [shape=point {}];", attrs.join(" ")));
+
+        result
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DotEdge {
+    source: String,
+    target: String,
+    parameters: Vec<String>,
+}
+
+impl DotEdge {
+    pub fn make(source: &str, target: &str) -> DotEdge {
+        let mut source = String::from(source);
+        let mut target = String::from(target);
+
+        if source > target {
+            mem::swap(&mut source, &mut target);
+        }
+
+        DotEdge {
+            source: source,
+            target: target,
+            parameters: vec![],
+        }
+    }
+
+    pub fn add_parameter(&mut self, param: String) {
+        self.parameters.push(param);
+    }
+
+    pub fn render(&self) -> String {
+        format!("\"{}\" -- \"{}\" [{}];",
+                self.source,
+                self.target,
+                self.parameters.join(" "))
+    }
+}
+
+#[derive(Clone)]
+pub struct DotGraph {
+    nodes: Vec<DotNode>,
+    edges: Vec<DotEdge>,
+}
+
+impl DotGraph {
+    pub fn make() -> DotGraph {
+        DotGraph {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+        }
+    }
+
+    pub fn add_node(&mut self, node: DotNode) {
+        self.nodes.push(node);
+    }
+
+    pub fn add_edge(&mut self, edge: DotEdge) {
+        self.edges.push(edge);
+    }
+
+    pub fn render(&self) -> String {
+        let mut result = String::new();
+
+        {
+            let mut add_line = |line: &str| {
+                result.push_str(line);
+                result.push_str("\n");
+            };
+
+            add_line("graph {");
+            for node in self.nodes.clone() {
+                add_line(&format!("    {}", node.render()));
+            }
+            for edge in self.edges.clone() {
+                add_line(&format!("    {}", edge.render()));
+            }
+            add_line("}");
+        }
+
+        result
+    }
+}
 
 pub fn subgraphs(maze: &mut Maze) -> Vec<Vec<Node>> {
     let mut ret_vec: Vec<Vec<Node>> = vec![];
@@ -24,7 +152,7 @@ pub fn name_nodes(maze: &mut Maze) -> Vec<Vec<String>> {
     for y in 0..size_y {
         let mut x_vec = vec![];
         for x in 0..size_x {
-            push_val = format!("\"{}-{}\"", x, y);
+            push_val = format!("{}-{}", x, y);
             x_vec.push(push_val);
         }
         ret_vec.push(x_vec);
@@ -32,60 +160,52 @@ pub fn name_nodes(maze: &mut Maze) -> Vec<Vec<String>> {
     ret_vec
 }
 
-pub fn dots(maze: &mut Maze) -> String {
-    let names_of_nodes = name_nodes(maze);
+pub fn render_dot(maze: &mut Maze) -> String {
+    let vec_ref = &name_nodes(maze);
     let subgraphs = subgraphs(maze);
-    let mut result = String::new();
-    result.push_str("graph {\n");
+
+    let mut graph = DotGraph::make();
+
     {
-        let vec_ref = &names_of_nodes;
-        for names in vec_ref {
-            result.push_str("subgraph {\nrank = same; ");
-            for name in names {
-                let line = format!("{}; ", name);
-                result.push_str(&line);
+        let mut edges: Vec<DotEdge> = vec![];
+
+        for (y, nodes) in subgraphs.iter().enumerate() {
+            for (x, node) in nodes.iter().enumerate() {
+                let node_name = &vec_ref[y][x];
+
+                {
+                    let mut dot_node = DotNode::make(node_name);
+                    dot_node.set_position(x as i32, y as i32);
+                    graph.add_node(dot_node);
+                }
+
+                let (x, y) = (x as i64, y as i64);
+
+                let dirs = vec![(Direction::Up, y - 1, x),
+                                (Direction::Down, y + 1, x),
+                                (Direction::Left, y, x - 1),
+                                (Direction::Right, y, x + 1)];
+
+                for (dir, a, b) in dirs {
+                    if node.has_no_wall(dir) {
+                        let (a, b) = (a as usize, b as usize);
+                        let neighbor_name = &vec_ref[a][b];
+                        edges.push(DotEdge::make(&node_name, &neighbor_name));
+                    }
+                }
             }
-            result.push_str("\n}\n");
+        }
+
+        edges.sort();
+
+        edges.dedup();
+
+        for edge in edges {
+            graph.add_edge(edge);
         }
     }
-    let mut x = 0;
-    let mut y = 0;
-    {
-        let vec_ref = &names_of_nodes;
-        let nodes_ref = &subgraphs;
-        for nodes in nodes_ref {
-            for node in nodes {
-                let line = format!("{} -- {{", vec_ref[y][x]);
-                result.push_str(&line);
-                if node.has_no_wall(Direction::Up) {
-                    assert!(y > 0);
-                    let line = format!(" {}", vec_ref[y - 1][x]);
-                    result.push_str(&line);
-                }
-                if node.has_no_wall(Direction::Down) {
-                    assert!(y < vec_ref.len());
-                    let line = format!(" {}", vec_ref[y + 1][x]);
-                    result.push_str(&line);
-                }
-                if node.has_no_wall(Direction::Left) {
-                    assert!(x > 0);
-                    let line = format!(" {}", vec_ref[y][x - 1]);
-                    result.push_str(&line);
-                }
-                if node.has_no_wall(Direction::Right) {
-                    assert!(x < vec_ref[y].len());
-                    let line = format!(" {}", vec_ref[y][x + 1]);
-                    result.push_str(&line);
-                }
-                result.push_str(" }\n");
-                x += 1;
-            }
-            y += 1;
-            x = 0;
-        }
-    }
-    result.push_str("}\n");
-    result
+
+    graph.render()
 }
 
 #[cfg(test)]
@@ -94,13 +214,13 @@ mod tests {
 
     #[test]
     fn dot_works() {
-        let (x, y) = (4, 4);
+        let (x, y) = (8, 8);
         let mut maze = generate_maze(x, y);
         let maze_ref = &mut maze;
         assert_eq!(name_nodes(maze_ref)[0].len(), x);
         assert_eq!(name_nodes(maze_ref).len(), y);
         assert_eq!(subgraphs(maze_ref)[0].len(), x);
         assert_eq!(subgraphs(maze_ref).len(), y);
-        dots(maze_ref);
+        println!("{}", render_dot(maze_ref));
     }
 }

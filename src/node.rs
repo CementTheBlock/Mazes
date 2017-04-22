@@ -34,18 +34,6 @@ pub struct CellData {
     right: Wall,
     visited: bool,
 }
-// impl<N: fmt::Display + Clone> fmt::Display for GNode<N> {
-// TODO: add digraph styled pretty-printing
-// fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-// let u = display_opening(self.up.clone());
-// let d = display_opening(self.down.clone());
-// let l = display_opening(self.left.clone());
-// let r = display_opening(self.right.clone());
-// let t = self.n_type.display();
-// let cd = self.cell_data.display();
-// write!(f, "{4}\n{0}\n{1}\n{2}\n{3}\n{5}", u, d, l, r, t, cd)
-// }
-// }
 
 impl fmt::Display for CellData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -122,7 +110,6 @@ fn display_opening<N: fmt::Display>(opening: Option<N>) -> String {
 }
 
 impl<N: fmt::Display + Clone> fmt::Display for GNode<N> {
-    // TODO: add digraph styled pretty-printing
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let u = display_opening(self.up.clone());
         let d = display_opening(self.down.clone());

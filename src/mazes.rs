@@ -256,6 +256,19 @@ pub mod node {
         pub fn is_not_visited(&self) -> bool {
             !(self.cell_data.visited)
         }
+
+        pub fn has_wall(&self, dir: Direction) -> bool {
+            match dir {
+                Direction::Up => !(self.cell_data.up),
+                Direction::Down => !(self.cell_data.down),
+                Direction::Left => !(self.cell_data.left),
+                Direction::Right => !(self.cell_data.right),
+            }
+        }
+
+        pub fn has_no_wall(&self, dir: Direction) -> bool {
+            !(self.has_wall(dir))
+        }
     }
 }
 
@@ -486,7 +499,7 @@ pub mod maze {
 
 pub mod dot {
     use super::maze::*;
-    use super::node::*;
+    // use super::node::*;
     use super::direction::*;
 
     pub fn subgraphs(maze: &mut Maze) -> Vec<Vec<Node>> {
@@ -504,34 +517,83 @@ pub mod dot {
         ret_vec
     }
 
-    pub fn name_nodes<'a>(maze: &mut Maze) -> Vec<Vec<&'a str>> {
+    pub fn name_nodes(maze: &mut Maze) -> Vec<Vec<String>> {
         let (size_x, size_y) = maze.size();
-        let mut ret_vec: Vec<Vec<&str>> = vec![];
+        let mut ret_vec = vec![];
         let mut push_val;
         for y in 0..size_y {
-            let mut x_vec: Vec<&str> = vec![];
+            let mut x_vec = vec![];
             for x in 0..size_x {
-                push_val = &*format!("\"{}-{}\"", x, y);
+                push_val = format!("\"{}-{}\"", x, y);
                 x_vec.push(push_val);
             }
             ret_vec.push(x_vec);
         }
         ret_vec
     }
+    // let mut result = String::new();
+    // result.push_str("digraph {\n");
+    // for e in edges {
+    // let line = format!("  \"{}\" -> \"{}\" [{}];\n", e.from, e.to, e.meta);
+    // result.push_str(&line);
+    // }
+    // result.push_str("}\n");
+    // result
 
-    pub fn dots<'a>(maze: &mut Maze) -> &'a str {
-        let names = name_nodes(maze);
-        let nodes = subgraphs(maze);
-        let mut build_string: String = "digraph {\n".to_string();
-        for vecs in names {
-            build_string = (build_string + "subgraph {\nrank = same;").to_string();
-            for names in vecs {
-                build_string = (build_string + names + "; ").to_string();
+    pub fn dots(maze: &mut Maze) -> String {
+        let names_of_nodes = name_nodes(maze);
+        let subgraphs = subgraphs(maze);
+        let mut result = String::new();
+        result.push_str("digraph {{\n");
+        {
+            let vec_ref = &names_of_nodes;
+            for names in vec_ref {
+                result.push_str("subgraph {{\nrank = same; ");
+                for name in names {
+                    let line = format!("{}; ", name);
+                    result.push_str(&line);
+                }
+                result.push_str("\n}}\n");
             }
-            build_string = (build_string + "\n}\n").to_string();
         }
-        let ret_string: &'a str = &build_string;
-        ret_string
+        let mut x = 0;
+        let mut y = 0;
+        let mut line;
+        {
+            let vec_ref = &names_of_nodes;
+            for nodes in subgraphs {
+                let nodes_ref = &nodes;
+                for names in vec_ref {
+                    for node in nodes_ref {
+                        for name in names {
+                            line = format!("{} -> {{", name);
+                            result.push_str(&line);
+                            if node.has_no_wall(Direction::Up) {
+                                line = format!(" {}", vec_ref[y - 1][x]);
+                                result.push_str(&line);
+                            }
+                            if node.has_no_wall(Direction::Down) {
+                                line = format!(" {}", vec_ref[y - 1][x]);
+                                result.push_str(&line);
+                            }
+                            if node.has_no_wall(Direction::Left) {
+                                line = format!(" {}", vec_ref[y][x - 1]);
+                                result.push_str(&line);
+                            }
+                            if node.has_no_wall(Direction::Right) {
+                                line = format!(" {}", vec_ref[y][x + 1]);
+                                result.push_str(&line);
+                            }
+                            result.push_str(" }}\n");
+                            x += 1;
+                        }
+                    }
+                    y += 1;
+                }
+            }
+        }
+        result.push_str("}}\n");
+        result
     }
 }
 
@@ -540,7 +602,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let (x, y) = (6, 2);
+        let (x, y) = (4, 4);
         let mut maze = super::maze::generate_maze(x, y);
         assert_eq!(maze.get_visiteds().iter().len(), x * y);
         assert!(maze.get_visiteds().iter().all(|&x| x));

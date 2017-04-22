@@ -1,6 +1,6 @@
 use maze::*;
-// use mazes::node::*;
 use direction::*;
+// use node::*;
 
 pub fn subgraphs(maze: &mut Maze) -> Vec<Vec<Node>> {
     let mut ret_vec: Vec<Vec<Node>> = vec![];
@@ -32,29 +32,20 @@ pub fn name_nodes(maze: &mut Maze) -> Vec<Vec<String>> {
     ret_vec
 }
 
-// let mut result = String::new();
-// result.push_str("digraph {\n");
-// for e in edges {
-// let line = format!("  \"{}\" -> \"{}\" [{}];\n", e.from, e.to, e.meta);
-// result.push_str(&line);
-// }
-// result.push_str("}\n");
-// result
-
 pub fn dots(maze: &mut Maze) -> String {
     let names_of_nodes = name_nodes(maze);
     let subgraphs = subgraphs(maze);
     let mut result = String::new();
-    result.push_str("digraph {{\n");
+    result.push_str("graph {\n");
     {
         let vec_ref = &names_of_nodes;
         for names in vec_ref {
-            result.push_str("subgraph {{\nrank = same; ");
+            result.push_str("subgraph {\nrank = same; ");
             for name in names {
                 let line = format!("{}; ", name);
                 result.push_str(&line);
             }
-            result.push_str("\n}}\n");
+            result.push_str("\n}\n");
         }
     }
     let mut x = 0;
@@ -62,38 +53,43 @@ pub fn dots(maze: &mut Maze) -> String {
     let mut line;
     {
         let vec_ref = &names_of_nodes;
-        for nodes in subgraphs {
-            let nodes_ref = &nodes;
-            for names in vec_ref {
-                for node in nodes_ref {
-                    for name in names {
-                        line = format!("{} -> {{", name);
-                        result.push_str(&line);
-                        if node.has_no_wall(Direction::Up) {
-                            line = format!(" {}", vec_ref[y - 1][x]);
-                            result.push_str(&line);
-                        }
-                        if node.has_no_wall(Direction::Down) {
-                            line = format!(" {}", vec_ref[y - 1][x]);
-                            result.push_str(&line);
-                        }
-                        if node.has_no_wall(Direction::Left) {
-                            line = format!(" {}", vec_ref[y][x - 1]);
-                            result.push_str(&line);
-                        }
-                        if node.has_no_wall(Direction::Right) {
-                            line = format!(" {}", vec_ref[y][x + 1]);
-                            result.push_str(&line);
-                        }
-                        result.push_str(" }}\n");
-                        x += 1;
-                    }
+        let nodes_ref = &subgraphs;
+        for nodes in nodes_ref {
+            for node in nodes {
+                line = format!("{} -- {{", vec_ref[y][x]);
+                result.push_str(&line);
+                let mut dir = Direction::Up;
+                let mut p = node.has_no_wall(dir);
+                if p {
+                    line = format!(" {}", vec_ref[y - 1][x]);
+                    result.push_str(&line);
                 }
-                y += 1;
+                dir = Direction::Down;
+                p = node.has_no_wall(dir);
+                if p & (y < vec_ref.len()) {
+                    line = format!(" {}", vec_ref[y + 1][x]);
+                    result.push_str(&line);
+                }
+                dir = Direction::Left;
+                p = node.has_no_wall(dir);
+                if p {
+                    line = format!(" {}", vec_ref[y][x - 1]);
+                    result.push_str(&line);
+                }
+                dir = Direction::Right;
+                p = node.has_no_wall(dir);
+                if p & (x < vec_ref.len()) {
+                    line = format!(" {}", vec_ref[y][x + 1]);
+                    result.push_str(&line);
+                }
+                result.push_str(" }\n");
+                x += 1;
             }
+            y += 1;
+            x = 0;
         }
     }
-    result.push_str("}}\n");
+    result.push_str("}\n");
     result
 }
 
@@ -106,6 +102,10 @@ mod tests {
         let (x, y) = (4, 4);
         let mut maze = generate_maze(x, y);
         let maze_ref = &mut maze;
+        assert_eq!(name_nodes(maze_ref)[0].len(), x);
+        assert_eq!(name_nodes(maze_ref).len(), y);
+        assert_eq!(subgraphs(maze_ref)[0].len(), x);
         assert_eq!(subgraphs(maze_ref).len(), y);
+        dots(maze_ref);
     }
 }

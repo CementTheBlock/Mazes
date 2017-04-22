@@ -160,6 +160,17 @@ impl Maze {
         }
         (x, y)
     }
+
+    pub fn print_maze(&mut self) {
+        let (size_x, size_y) = self.size();
+        let mut cursor;
+        for x in 0..size_x {
+            for y in 0..size_y {
+                cursor = self.by_coords(x, y);
+                self.at(cursor).print();
+            }
+        }
+    }
 }
 
 pub fn make_plane(side_length_x: usize, side_length_y: usize) -> Maze {

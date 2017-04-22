@@ -24,7 +24,7 @@ impl NodeType {
     }
 }
 
-pub type Wall = bool;
+type Wall = bool;
 
 #[derive(Clone, Copy)]
 pub struct CellData {
@@ -34,13 +34,41 @@ pub struct CellData {
     right: Wall,
     visited: bool,
 }
+// impl<N: fmt::Display + Clone> fmt::Display for GNode<N> {
+// TODO: add digraph styled pretty-printing
+// fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+// let u = display_opening(self.up.clone());
+// let d = display_opening(self.down.clone());
+// let l = display_opening(self.left.clone());
+// let r = display_opening(self.right.clone());
+// let t = self.n_type.display();
+// let cd = self.cell_data.display();
+// write!(f, "{4}\n{0}\n{1}\n{2}\n{3}\n{5}", u, d, l, r, t, cd)
+// }
+// }
 
 impl fmt::Display for CellData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.visited {
-            true => write!(f, "Visited"),
-            false => write!(f, "Not Visited"),
-        }
+        let u = display_wall(self.up.clone());
+        let d = display_wall(self.down.clone());
+        let l = display_wall(self.left.clone());
+        let r = display_wall(self.right.clone());
+        let v = display_visited(self.visited.clone());
+        write!(f, "{0}\n{1}\n{2}\n{3}\n{4}", v, u, d, l, r)
+    }
+}
+
+fn display_wall(wall: Wall) -> String {
+    match wall {
+        true => format!("Wall"),
+        false => format!("No Wall"),
+    }
+}
+
+fn display_visited(visited: bool) -> String {
+    match visited {
+        true => format!("Visited"),
+        false => format!("Not Visited"),
     }
 }
 
@@ -197,10 +225,10 @@ impl<N> GNode<N> {
 
     pub fn has_wall(&self, dir: Direction) -> bool {
         match dir {
-            Direction::Up => !(self.cell_data.up),
-            Direction::Down => !(self.cell_data.down),
-            Direction::Left => !(self.cell_data.left),
-            Direction::Right => !(self.cell_data.right),
+            Direction::Up => self.cell_data.up,
+            Direction::Down => self.cell_data.down,
+            Direction::Left => self.cell_data.left,
+            Direction::Right => self.cell_data.right,
         }
     }
 

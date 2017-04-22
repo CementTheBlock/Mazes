@@ -103,13 +103,15 @@ impl Maze {
         let mut option: Option<Cursor>;
         let mut maze_copy = self.clone();
 
-        let mut helper = |option: Option<Cursor>, ret_maze_ref: &mut Maze| if let Some(cur_b) =
-            option {
-            (*ret_maze_ref).nodes.push(*maze_copy.at(cur_b));
-        } else {
-            let mut new_node = Node::new(NodeType::Regular);
-            new_node.visit();
-            (*ret_maze_ref).nodes.push(new_node);
+        let mut helper = |option: Option<Cursor>, ret_maze_ref: &mut Maze| {
+            let mut push = |node| (*ret_maze_ref).nodes.push(node);
+            if let Some(cur_b) = option {
+                push(*maze_copy.at(cur_b));
+            } else {
+                let mut new_node = Node::new(NodeType::Regular);
+                new_node.visit();
+                push(new_node);
+            }
         };
 
         {

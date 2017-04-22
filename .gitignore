@@ -19,5 +19,9 @@ mazes
 target
 Cargo.lock
 
+# Dot files
+*.dot
+*.png
+
 # Miscellaneous
 .DS_Store

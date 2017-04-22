@@ -35,17 +35,6 @@ pub mod direction {
             }
         }
 
-        // pub fn reselect_direction(&self, directions: Vec<Direction>) -> Direction {
-        // let mut rng = thread_rng();
-        // let mut ret_dir = Direction::rand(&mut rng);
-        // let mut clone = directions.clone();
-        // while !(ret_dir.vec_elem(clone)) {
-        // ret_dir = Direction::rand(&mut rng);
-        // clone = directions.clone();
-        // }
-        // ret_dir
-        // }
-
         pub fn vec_elem(self, vec: Vec<Direction>) -> bool {
             for dirs in vec.into_iter() {
                 if self == dirs {
@@ -416,38 +405,59 @@ pub mod maze {
             }
             ret_vec
         }
+
+        pub fn size(&mut self) -> (usize, usize) {
+            let cursor = self.get_root();
+            let mut x = 1;
+            let mut y = 1;
+            let mut next = self.at(cursor).get_neighbor_option(Direction::Right);
+            while let Some(cursor) = next {
+                x += 1;
+                next = self.at(cursor).get_neighbor_option(Direction::Right);
+            }
+            next = self.at(cursor).get_neighbor_option(Direction::Down);
+            while let Some(cursor) = next {
+                y += 1;
+                next = self.at(cursor).get_neighbor_option(Direction::Down);
+            }
+            (x, y)
+        }
     }
 
-    pub fn make_plane(side_length: usize) -> Maze {
+    pub fn make_plane(side_length_x: usize, side_length_y: usize) -> Maze {
         let mut maze = Maze::new();
         let mut cursor;
-        for x in 0..side_length {
+        for x in 0..side_length_x {
             cursor = maze.by_coords(x, 0);
-            if x < side_length - 1 {
+            if x < side_length_x - 1 {
                 maze.add(cursor, Direction::Right, NodeType::Regular);
             }
-            for y in 0..side_length - 1 {
+            for y in 0..side_length_y - 1 {
                 cursor = maze.by_coords(x, y);
                 maze.add(cursor, Direction::Down, NodeType::Regular);
             }
 
         }
 
-        for x in 0..side_length - 1 {
-            for y in 1..side_length {
+        for x in 0..side_length_x - 1 {
+            for y in 1..side_length_y {
                 let cursor_a = maze.by_coords(x, y);
                 let cursor_b = maze.by_coords(x + 1, y);
                 maze.add_edge(cursor_a, cursor_b, Direction::Right);
             }
         }
 
-        let cursor = maze.by_coords(side_length - 1, side_length - 1);
+        let cursor = maze.by_coords(side_length_x - 1, side_length_y - 1);
         maze.at(cursor).set_type(NodeType::End);
         maze
     }
 
-    pub fn generate_maze(side_length: usize) -> Maze {
-        let mut maze = make_plane(side_length);
+    pub fn make_square_plane(side_length: usize) -> Maze {
+        make_plane(side_length, side_length)
+    }
+
+    pub fn generate_maze(side_length_x: usize, side_length_y: usize) -> Maze {
+        let mut maze = make_plane(side_length_x, side_length_y);
         let mut cursor = maze.get_root();
         let mut stack = vec![];
         let mut new_dir;
@@ -468,6 +478,61 @@ pub mod maze {
         }
         maze
     }
+
+    pub fn generate_square_maze(side_length: usize) -> Maze {
+        generate_maze(side_length, side_length)
+    }
+}
+
+pub mod dot {
+    use super::maze::*;
+    use super::node::*;
+    use super::direction::*;
+
+    pub fn subgraphs(maze: &mut Maze) -> Vec<Vec<Node>> {
+        let mut ret_vec: Vec<Vec<Node>> = vec![];
+        let (size_x, size_y) = maze.size();
+        let mut cursor;
+        for y in 0..size_y {
+            let mut x_vec: Vec<Node> = vec![];
+            for x in 0..size_x {
+                cursor = maze.by_coords(x, y);
+                x_vec.push(*maze.at(cursor));
+            }
+            ret_vec.push(x_vec);
+        }
+        ret_vec
+    }
+
+    pub fn name_nodes<'a>(maze: &mut Maze) -> Vec<Vec<&'a str>> {
+        let (size_x, size_y) = maze.size();
+        let mut ret_vec: Vec<Vec<&str>> = vec![];
+        let mut push_val;
+        for y in 0..size_y {
+            let mut x_vec: Vec<&str> = vec![];
+            for x in 0..size_x {
+                push_val = &*format!("\"{}-{}\"", x, y);
+                x_vec.push(push_val);
+            }
+            ret_vec.push(x_vec);
+        }
+        ret_vec
+    }
+
+    pub fn dots<'a>(maze: &mut Maze) -> &'a str {
+        let names = name_nodes(maze);
+        let nodes = subgraphs(maze);
+        let mut build_string: String = "digraph {\n".to_string();
+        for vecs in names {
+            build_string = (build_string + "subgraph {\nrank = same;").to_string();
+            for names in vecs {
+                build_string = (build_string + names + "; ").to_string();
+            }
+            build_string = (build_string + "\n}\n").to_string();
+        }
+        let ret_string: &'a str = &build_string;
+        ret_string
+    }
 }
 
 #[cfg(test)]
@@ -475,11 +540,14 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let maze = super::maze::generate_maze(4);
-        assert_eq!(maze.get_visiteds().iter().len(), 4 * 4);
-        let cursor = maze.by_coords(2, 1);
+        let (x, y) = (6, 2);
+        let mut maze = super::maze::generate_maze(x, y);
+        assert_eq!(maze.get_visiteds().iter().len(), x * y);
         assert!(maze.get_visiteds().iter().all(|&x| x));
-        // TODO: replace with assert!
-        maze.get(cursor).print();
+        assert_eq!(maze.size(), (x, y));
+        {
+            let maze_ref = &mut maze;
+            assert_eq!(super::dot::subgraphs(maze_ref).len(), y);
+        }
     }
 }

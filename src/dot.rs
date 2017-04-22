@@ -50,36 +50,31 @@ pub fn dots(maze: &mut Maze) -> String {
     }
     let mut x = 0;
     let mut y = 0;
-    let mut line;
     {
         let vec_ref = &names_of_nodes;
         let nodes_ref = &subgraphs;
         for nodes in nodes_ref {
             for node in nodes {
-                line = format!("{} -- {{", vec_ref[y][x]);
+                let line = format!("{} -- {{", vec_ref[y][x]);
                 result.push_str(&line);
-                let mut dir = Direction::Up;
-                let mut p = node.has_no_wall(dir);
-                if p {
-                    line = format!(" {}", vec_ref[y - 1][x]);
+                if node.has_no_wall(Direction::Up) {
+                    assert!(y > 0);
+                    let line = format!(" {}", vec_ref[y - 1][x]);
                     result.push_str(&line);
                 }
-                dir = Direction::Down;
-                p = node.has_no_wall(dir);
-                if p & (y < vec_ref.len()) {
-                    line = format!(" {}", vec_ref[y + 1][x]);
+                if node.has_no_wall(Direction::Down) {
+                    assert!(y < vec_ref.len());
+                    let line = format!(" {}", vec_ref[y + 1][x]);
                     result.push_str(&line);
                 }
-                dir = Direction::Left;
-                p = node.has_no_wall(dir);
-                if p {
-                    line = format!(" {}", vec_ref[y][x - 1]);
+                if node.has_no_wall(Direction::Left) {
+                    assert!(x > 0);
+                    let line = format!(" {}", vec_ref[y][x - 1]);
                     result.push_str(&line);
                 }
-                dir = Direction::Right;
-                p = node.has_no_wall(dir);
-                if p & (x < vec_ref.len()) {
-                    line = format!(" {}", vec_ref[y][x + 1]);
+                if node.has_no_wall(Direction::Right) {
+                    assert!(x < vec_ref[y].len());
+                    let line = format!(" {}", vec_ref[y][x + 1]);
                     result.push_str(&line);
                 }
                 result.push_str(" }\n");
